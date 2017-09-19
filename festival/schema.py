@@ -28,6 +28,112 @@ def load_json(str_value):
 # endregion
 
 
+class CityCreateRequestSchema(Schema):
+    """ JSON serialization schema """
+    name = fields.String(required=True)
+    slug = fields.String(required=True)
+
+    # noinspection PyUnresolvedReferences
+    @post_load
+    def make_object(self, data):
+        """ Deserialize data into an instance of City"""
+        return City(**data)
+
+    class Meta:
+        ordered = True
+
+
+class CityListResponseSchema(Schema):
+    """ JSON serialization schema """
+    id = fields.Integer(required=True)
+    name = fields.String(required=True)
+    slug = fields.String(required=True)
+
+    # noinspection PyUnresolvedReferences
+    @post_load
+    def make_object(self, data):
+        """ Deserialize data into an instance of City"""
+        return City(**data)
+
+    class Meta:
+        ordered = True
+
+
+class CityItemResponseSchema(Schema):
+    """ JSON serialization schema """
+    id = fields.Integer(required=True)
+    name = fields.String(required=True)
+    slug = fields.String(required=True)
+
+    # noinspection PyUnresolvedReferences
+    @post_load
+    def make_object(self, data):
+        """ Deserialize data into an instance of City"""
+        return City(**data)
+
+    class Meta:
+        ordered = True
+
+
+class ExperimentCreateRequestSchema(Schema):
+    """ JSON serialization schema """
+    date = fields.DateTime(required=True)
+    type = fields.String(required=True,
+                         validate=[OneOf(ResultType.__dict__.keys())])
+    city = fields.Nested(
+        'CityCreateRequestSchema',
+        required=True)
+
+    # noinspection PyUnresolvedReferences
+    @post_load
+    def make_object(self, data):
+        """ Deserialize data into an instance of Experiment"""
+        return Experiment(**data)
+
+    class Meta:
+        ordered = True
+
+
+class ExperimentListResponseSchema(Schema):
+    """ JSON serialization schema """
+    id = fields.Integer(required=True)
+    date = fields.DateTime(required=True)
+    type = fields.String(required=True,
+                         validate=[OneOf(ResultType.__dict__.keys())])
+    city = fields.Nested(
+        'CityListResponseSchema',
+        required=True)
+
+    # noinspection PyUnresolvedReferences
+    @post_load
+    def make_object(self, data):
+        """ Deserialize data into an instance of Experiment"""
+        return Experiment(**data)
+
+    class Meta:
+        ordered = True
+
+
+class ExperimentItemResponseSchema(Schema):
+    """ JSON serialization schema """
+    id = fields.Integer(required=True)
+    date = fields.DateTime(required=True)
+    type = fields.String(required=True,
+                         validate=[OneOf(ResultType.__dict__.keys())])
+    city = fields.Nested(
+        'CityItemResponseSchema',
+        required=True)
+
+    # noinspection PyUnresolvedReferences
+    @post_load
+    def make_object(self, data):
+        """ Deserialize data into an instance of Experiment"""
+        return Experiment(**data)
+
+    class Meta:
+        ordered = True
+
+
 class GridCellCreateRequestSchema(Schema):
     """ JSON serialization schema """
     north_latitude = fields.Decimal(required=True)
@@ -83,13 +189,14 @@ class GridCellItemResponseSchema(Schema):
 
 class ResultCreateRequestSchema(Schema):
     """ JSON serialization schema """
-    type = fields.String(required=True,
-                         validate=[OneOf(ResultType.__dict__.keys())])
     date = fields.DateTime(required=True)
     updated = fields.DateTime(required=True)
     value = fields.String(required=False, allow_none=True)
     grid_cell = fields.Nested(
         'GridCellCreateRequestSchema',
+        required=True)
+    experiment = fields.Nested(
+        'ExperimentCreateRequestSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -105,13 +212,14 @@ class ResultCreateRequestSchema(Schema):
 class ResultListResponseSchema(Schema):
     """ JSON serialization schema """
     id = fields.Integer(required=True)
-    type = fields.String(required=True,
-                         validate=[OneOf(ResultType.__dict__.keys())])
     date = fields.DateTime(required=True)
     updated = fields.DateTime(required=True)
     value = fields.String(required=False, allow_none=True)
     grid_cell = fields.Nested(
         'GridCellListResponseSchema',
+        required=True)
+    experiment = fields.Nested(
+        'ExperimentListResponseSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -127,13 +235,14 @@ class ResultListResponseSchema(Schema):
 class ResultItemResponseSchema(Schema):
     """ JSON serialization schema """
     id = fields.Integer(required=True)
-    type = fields.String(required=True,
-                         validate=[OneOf(ResultType.__dict__.keys())])
     date = fields.DateTime(required=True)
     updated = fields.DateTime(required=True)
     value = fields.String(required=False, allow_none=True)
     grid_cell = fields.Nested(
         'GridCellItemResponseSchema',
+        required=True)
+    experiment = fields.Nested(
+        'ExperimentItemResponseSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences

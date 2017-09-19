@@ -29,6 +29,46 @@ class ResultType:
                 if n[0] != '_' and n != 'values']
 
 
+class City(db.Model):
+    """ City """
+    __tablename__ = 'city'
+
+    # Fields
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    slug = Column(String(50), nullable=False)
+
+    def __unicode__(self):
+        return self.name
+
+    def __repr__(self):
+        return '<Instance {}: {}>'.format(self.__class__, self.id)
+
+
+class Experiment(db.Model):
+    """ Experiment """
+    __tablename__ = 'experiment'
+
+    # Fields
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime, nullable=False)
+    type = Column(Enum(*ResultType.values(),
+                       name='ResultTypeEnumType'), nullable=False)
+
+    # Associations
+    city_id = Column(Integer,
+                     ForeignKey("city.id"), nullable=False)
+    city = relationship(
+        "City",
+        foreign_keys=[city_id])
+
+    def __unicode__(self):
+        return self.date
+
+    def __repr__(self):
+        return '<Instance {}: {}>'.format(self.__class__, self.id)
+
+
 class GridCell(db.Model):
     """ A grid cell for displaying results for EUBra-BIGSEA """
     __tablename__ = 'grid_cell'
@@ -39,6 +79,13 @@ class GridCell(db.Model):
     south_latitude = Column(Numeric(12, 8), nullable=False)
     east_longitude = Column(Numeric(12, 8), nullable=False)
     west_longitude = Column(Numeric(12, 8), nullable=False)
+
+    # Associations
+    city_id = Column(Integer,
+                     ForeignKey("city.id"), nullable=False)
+    city = relationship(
+        "City",
+        foreign_keys=[city_id])
 
     def __unicode__(self):
         return self.north_latitude
@@ -53,11 +100,9 @@ class Result(db.Model):
 
     # Fields
     id = Column(Integer, primary_key=True)
-    type = Column(Enum(*ResultType.values(),
-                       name='ResultTypeEnumType'), nullable=False)
     date = Column(DateTime, nullable=False)
     updated = Column(DateTime, nullable=False)
-    value = Column(Text)
+    value = Column(Float)
 
     # Associations
     grid_cell_id = Column(Integer,
@@ -65,9 +110,14 @@ class Result(db.Model):
     grid_cell = relationship(
         "GridCell",
         foreign_keys=[grid_cell_id])
+    experiment_id = Column(Integer,
+                           ForeignKey("experiment.id"), nullable=False)
+    experiment = relationship(
+        "Experiment",
+        foreign_keys=[experiment_id])
 
     def __unicode__(self):
-        return self.type
+        return self.date
 
     def __repr__(self):
         return '<Instance {}: {}>'.format(self.__class__, self.id)
