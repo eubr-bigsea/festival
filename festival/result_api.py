@@ -3,6 +3,7 @@ from app_auth import requires_auth
 from flask import request, current_app
 from flask_restful import Resource
 from schema import *
+from sqlalchemy.orm import joinedload
 
 
 def is_digit(v):
@@ -28,6 +29,8 @@ class ResultListApi(Resource):
         latitude = request.args.get('latitude')
         longitude = request.args.get('longitude')
         result_type = request.args.get('type')
+        min_value = float(request.args.get('min', '0'))
+
         # ts = request.args.get('ts', )
         if not result_type or result_type not in ResultType.values():
             results = {'status': 'ERROR', 'message': 'Invalid result type'}
@@ -45,20 +48,26 @@ class ResultListApi(Resource):
             else:
                 results = {'data': ResultListResponseSchema(
                     many=True, only=only).dump(
-                    Result.query.join(GridCell).filter(
+                    db.session.query(Result) \
+                        .join(Experiment)
+                        .options(joinedload(Result.grid_cell)).filter(
                         Experiment.type == result_type,
                         GridCell.north_latitude >= float(latitude),
                         GridCell.south_latitude <= float(latitude),
                         GridCell.east_longitude >= float(longitude),
                         GridCell.west_longitude <= float(longitude),
-                        )).data}
+                        Result.value >= min_value
+                    )).data}
         else:
             results = {'data': ResultListResponseSchema(
                 many=True, only=only).dump(
-                Result.query.join(GridCell).filter(
-                    Experiment.type == result_type
+                Result.query.join(Experiment) \
+                    .options(joinedload(Result.grid_cell)).filter(
+                    Experiment.type == result_type,
+                    Result.value >= min_value
                 )).data}
 
+        db.session.rollback()
         return results, result_code
 
     @staticmethod
