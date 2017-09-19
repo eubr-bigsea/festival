@@ -1,0 +1,113 @@
+<html>
+<head>
+    <title>Festival Demo</title>
+</head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"
+      integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ=="
+      crossorigin=""/>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+<!--<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />-->
+<style>
+    #map {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #222;
+    }
+    body { font: 16px/1.4 "Helvetica Neue", Arial, sans-serif; }
+    .ghbtns { position: relative; top: 4px; margin-left: 5px; }
+    a { color: #0077ff; }
+
+
+</style>
+<body>
+<div id='msg' class="hide alert alert-info"></div>
+<div>
+    <div id="map"></div>
+</div>
+<script
+        src="https://code.jquery.com/jquery-2.2.4.min.js"
+        integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.js"></script>
+<!--<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-virtual-grid@1.0.4/dist/virtual-grid.min.js"></script>
+<script>
+var rects = {};
+function coordsToKey(coords){
+        return coords.x + ':' + coords.y + ':' +coords.z;
+      }
+function vgMap(){
+    var vg = new VirtualGrid({
+        cellSize: 8
+    });
+    /*
+    // listen for when new cells come into the view for the first time
+    vg.on("cellcreate", function(e){
+      console.log(e.type, e);
+    });
+
+    // listen for when cells reenter the view
+    vg.on("cellenter", function(e){
+      console.log(e.type, e);
+    });
+
+    // listen for when cells leave the view
+    vg.on("cellleave", function(e){
+      console.log(e.type, e);
+    });
+    */
+
+    vg.on('cellcreate', function(e) {
+        rects[coordsToKey(e.coords)] = L.rectangle(e.bounds, {
+          color: '#3ac1f0',
+          weight: 2,
+          opacity: 0.1,
+          fillOpacity: 0.1
+        }).addTo(map);
+      });
+      vg.on('cellenter', function(e) {
+        var rect = rects[coordsToKey(e.coords)];
+        map.addLayer(rect);
+      });
+      vg.on('cellleave', function(e) {
+        var rect = rects[coordsToKey(e.coords)];
+        map.removeLayer(rect);
+      });
+
+    // add the grid to the map
+    vg.addTo(map);
+}
+
+$(document).ready(function(){
+    'use strict';
+    var map = L.map('map').setView([-25.4342, -49.2714], 12);
+    var tiles = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    $.ajax({
+        url: '../results',
+        headers: {'X-Auth-Token': '123456'},
+        data: {type: 'SENTIMENT'}
+    }).success(function(response){
+        var points = response.data.map(function(p) { return [p.latitude, p.longitude]; });
+        var heat = L.heatLayer(points, {
+            radius: 25, minOpacity:0.30
+        }).addTo(map);
+    }).error(function(response){
+        if (response.responseJSON){
+            $('#msg').removeClass('hide').html(response.responseJSON.message)
+        } else {
+                $('#msg').removeClass('hide').html('Unknown error')
+        }
+        console.error(response)
+    });
+
+});
+
+
+</script>
+
+</body>
+</html>

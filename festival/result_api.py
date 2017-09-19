@@ -18,7 +18,7 @@ class ResultListApi(Resource):
     @staticmethod
     @requires_auth
     def get():
-        results, result_code = {}, 401
+        results, result_code = {}, 200
         if request.args.get('fields'):
             only = [f.strip() for f in
                     request.args.get('fields').split(',')]
@@ -29,26 +29,34 @@ class ResultListApi(Resource):
         longitude = request.args.get('longitude')
         result_type = request.args.get('type')
         # ts = request.args.get('ts', )
-        if not (latitude and longitude and result_type):
-            results = {
-                'status': 'ERROR',
-                'message': ('At least one parameter is missing (latitude, '
-                            'longitude or type ')}
-        elif not (is_digit(longitude) and is_digit(latitude)):
-            results = {
-                'status': 'ERROR',
-                'message': 'Latitude and longitude must be numbers'}
-        elif result_type not in ResultType.values():
+        if not result_type or result_type not in ResultType.values():
             results = {'status': 'ERROR', 'message': 'Invalid result type'}
+            result_code = 400
+        elif latitude and longitude:
+            # results = {
+            #     'status': 'ERROR',
+            #     'message': ('At least one parameter is missing (latitude, '
+            #                 'longitude or type ')}
+            if not (is_digit(longitude) and is_digit(latitude)):
+                results = {
+                    'status': 'ERROR',
+                    'message': 'Latitude and longitude must be numbers'}
+                result_code = 400
+            else:
+                results = {'data': ResultListResponseSchema(
+                    many=True, only=only).dump(
+                    Result.query.join(GridCell).filter(
+                        Experiment.type == result_type,
+                        GridCell.north_latitude >= float(latitude),
+                        GridCell.south_latitude <= float(latitude),
+                        GridCell.east_longitude >= float(longitude),
+                        GridCell.west_longitude <= float(longitude),
+                        )).data}
         else:
             results = {'data': ResultListResponseSchema(
                 many=True, only=only).dump(
                 Result.query.join(GridCell).filter(
-                    Result.type == result_type,
-                    GridCell.north_latitude >= float(latitude),
-                    GridCell.south_latitude <= float(latitude),
-                    GridCell.east_longitude >= float(longitude),
-                    GridCell.west_longitude <= float(longitude),
+                    Experiment.type == result_type
                 )).data}
 
         return results, result_code
@@ -57,7 +65,7 @@ class ResultListApi(Resource):
     @requires_auth
     def post():
         result, result_code = dict(
-            status="ERROR", message="Missing json in the request body"), 401
+            status="ERROR", message="Missing json in the request body"), 400
         if request.json is not None:
             request_schema = ResultCreateRequestSchema()
             response_schema = ResultItemResponseSchema()
@@ -65,7 +73,7 @@ class ResultListApi(Resource):
             if form.errors:
                 result, result_code = dict(
                     status="ERROR", message="Validation error",
-                    errors=form.errors), 401
+                    errors=form.errors), 400
             else:
                 try:
                     result = form.data

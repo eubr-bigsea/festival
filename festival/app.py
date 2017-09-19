@@ -8,8 +8,8 @@ import eventlet.wsgi
 import os
 import sqlalchemy_utils
 import yaml
-from festival.models import GridCell, Result
 from flask import Flask, request
+from flask import send_from_directory
 from flask_babel import get_locale, Babel
 from flask_cors import CORS
 from flask_restful import Api, abort
@@ -44,6 +44,12 @@ def before():
     if request.args and 'lang' in request.args:
         if request.args['lang'] not in ('es', 'en'):
             return abort(404)
+
+
+@app.route('/demo/<path:filename>')
+def demo(filename):
+    root_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    return send_from_directory(os.path.join(root_dir, 'static'), filename)
 
 
 @babel.localeselector
