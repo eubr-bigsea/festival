@@ -78,6 +78,19 @@ function vgMap(){
     // add the grid to the map
     vg.addTo(map);
 }
+function perc2color(perc) {
+    var r, g, b = 0;
+    if(perc < 50) {
+        r = 255;
+        g = Math.round(5.1 * perc);
+    }
+    else {
+        g = 255;
+        r = Math.round(510 - 5.10 * perc);
+    }
+    var h = r * 0x10000 + g * 0x100 + b * 0x1;
+    return '#' + ('000000' + h.toString(16)).slice(-6);
+}
 
 $(document).ready(function(){
     'use strict';
@@ -91,10 +104,40 @@ $(document).ready(function(){
         headers: {'X-Auth-Token': '123456'},
         data: {type: 'SENTIMENT'}
     }).success(function(response){
-        var points = response.data.map(function(p) { return [p.latitude, p.longitude]; });
+        /*var points = response.data.map(function(p) { return [p.latitude, p.longitude]; });
         var heat = L.heatLayer(points, {
             radius: 25, minOpacity:0.30
-        }).addTo(map);
+        }).addTo(map);*/
+        var styles = {
+            "stroke-width": 0,
+            "fill-opacity": "0" 
+        }
+        var geoJsonObjs = response.data.map(function(item){
+            var gridCell = item.grid_cell;
+            return {
+                "type": "Feature",
+                "properties": {
+                    "color": perc2color(item.value * 100)
+                },
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[
+                        [gridCell.west_longitude, gridCell.north_latitude],
+                        [gridCell.west_longitude, gridCell.south_latitude],
+                        [gridCell.east_longitude, gridCell.south_latitude],
+                        [gridCell.east_longitude, gridCell.north_latitude]
+                    ]]
+                }
+            };
+        });
+        console.debug(geoJsonObjs);
+        L.geoJSON(geoJsonObjs, {style: function(feature){
+            return {
+                fillColor: feature.properties.color,
+                weight: 0,
+                fillOpacity: 0.6
+            }
+        }}).addTo(map);
     }).error(function(response){
         if (response.responseJSON){
             $('#msg').removeClass('hide').html(response.responseJSON.message)

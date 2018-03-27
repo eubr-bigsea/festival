@@ -81,7 +81,7 @@ class ExperimentCreateRequestSchema(Schema):
     type = fields.String(required=True,
                          validate=[OneOf(ResultType.__dict__.keys())])
     city = fields.Nested(
-        'festival.schema.CityCreateRequestSchema',
+        'CityCreateRequestSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -101,7 +101,7 @@ class ExperimentListResponseSchema(Schema):
     type = fields.String(required=True,
                          validate=[OneOf(ResultType.__dict__.keys())])
     city = fields.Nested(
-        'festival.schema.CityListResponseSchema',
+        'CityListResponseSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -121,7 +121,7 @@ class ExperimentItemResponseSchema(Schema):
     type = fields.String(required=True,
                          validate=[OneOf(ResultType.__dict__.keys())])
     city = fields.Nested(
-        'festival.schema.CityItemResponseSchema',
+        'CityItemResponseSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -141,7 +141,7 @@ class GridCellCreateRequestSchema(Schema):
     east_longitude = fields.Decimal(required=True)
     west_longitude = fields.Decimal(required=True)
     city = fields.Nested(
-        'festival.schema.CityCreateRequestSchema',
+        'CityCreateRequestSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -161,9 +161,6 @@ class GridCellListResponseSchema(Schema):
     south_latitude = fields.Decimal(required=True)
     east_longitude = fields.Decimal(required=True)
     west_longitude = fields.Decimal(required=True)
-    city = fields.Nested(
-        'festival.schema.CityListResponseSchema',
-        required=True)
 
     # noinspection PyUnresolvedReferences
     @post_load
@@ -183,7 +180,7 @@ class GridCellItemResponseSchema(Schema):
     east_longitude = fields.Decimal(required=True)
     west_longitude = fields.Decimal(required=True)
     city = fields.Nested(
-        'festival.schema.CityItemResponseSchema',
+        'CityItemResponseSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -202,10 +199,10 @@ class ResultCreateRequestSchema(Schema):
     updated = fields.DateTime(required=True)
     value = fields.Float(required=False, allow_none=True)
     grid_cell = fields.Nested(
-        'festival.schema.GridCellCreateRequestSchema',
+        'GridCellCreateRequestSchema',
         required=True)
     experiment = fields.Nested(
-        'festival.schema.ExperimentCreateRequestSchema',
+        'ExperimentCreateRequestSchema',
         required=True)
 
     # noinspection PyUnresolvedReferences
@@ -221,6 +218,9 @@ class ResultCreateRequestSchema(Schema):
 class ResultListResponseSchema(Schema):
     """ JSON serialization schema """
     value = fields.Float(required=False, allow_none=True)
+    grid_cell = fields.Nested(
+        'GridCellListResponseSchema',
+        required=True)
     latitude = fields.Function(lambda x: float(
         x.grid_cell.north_latitude + x.grid_cell.south_latitude) * .5)
     longitude = fields.Function(lambda x: float(
